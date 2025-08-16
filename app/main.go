@@ -67,15 +67,15 @@ func matchWord(line []byte) (bool, error) {
 		cap := char - 'A'
 		sml := char - 'a'
 
-		if !((num >= 0 && num <= 9) ||
+		if (num >= 0 && num <= 9) ||
 			(cap >= 0 && cap <= 25) ||
 			(sml >= 0 && sml <= 25) ||
-			char == '_') {
-			return false, nil
+			char == '_' {
+			return true, nil
 		}
 	}
 	// fmt.Println("matchWord completed successfully")
-	return true, nil
+	return false, nil
 }
 
 func matchDigit(line []byte) (bool, error) {
