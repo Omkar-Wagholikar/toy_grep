@@ -69,7 +69,7 @@ func matchWord(line []byte) (bool, error) {
 
 		if !((num >= 0 && num <= 9) ||
 			(cap >= 0 && cap <= 25) ||
-			(sml >= 0 || sml <= 25) ||
+			(sml >= 0 && sml <= 25) ||
 			char == '_') {
 			return false, nil
 		}
