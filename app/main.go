@@ -10,13 +10,14 @@ import (
 
 var _ = bytes.ContainsAny
 
-// Usage: echo <input_text> | your_program.sh -E <pattern>
+// Usage: echo <input_text> | toy_grep.sh -E <pattern>
 func main() {
 	if len(os.Args) < 3 || os.Args[1] != "-E" {
 		fmt.Fprintf(os.Stderr, "usage: mygrep -E <pattern>\n")
 		os.Exit(2) // 1 means no lines were selected, >1 means error
 	}
 
+	// flag := os.Args[1]
 	pattern := os.Args[2]
 
 	line, err := io.ReadAll(os.Stdin) // assuming we're only dealing with a single line
@@ -25,7 +26,8 @@ func main() {
 		os.Exit(2)
 	}
 
-	ok, err := matchLine(line, pattern)
+	ok, err := matchPattern(line, pattern)
+
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(2)
@@ -35,11 +37,39 @@ func main() {
 		os.Exit(1)
 	}
 
+	fmt.Fprintf(os.Stdout, "Successful exec")
 	// default exit code is 0 which means success
 	os.Exit(0)
 }
 
+func matchPattern(line []byte, pattern string) (bool, error) {
+	// fmt.Println("this is the match pattern function", pattern)
+
+	if pattern == "d" {
+		return matchDigit(line, pattern)
+	} else {
+		return matchLine(line, pattern)
+	}
+}
+
+func matchDigit(line []byte, pattern string) (bool, error) {
+	// fmt.Println("this is the match digit function")
+	if utf8.RuneCountInString(pattern) != 1 {
+		return false, fmt.Errorf("unsupported pattern: %q", pattern)
+	}
+
+	for _, char := range string(line) {
+		num := char - 'a'
+		if num >= 0 && num <= 9 {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
 func matchLine(line []byte, pattern string) (bool, error) {
+	// fmt.Println("this is the match line function")
 	if utf8.RuneCountInString(pattern) != 1 {
 		return false, fmt.Errorf("unsupported pattern: %q", pattern)
 	}
