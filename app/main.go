@@ -2,9 +2,11 @@ package main
 
 import (
 	"bytes"
+	"container/list"
 	"fmt"
 	"io"
 	"os"
+	"strings"
 )
 
 var _ = bytes.ContainsAny
@@ -39,7 +41,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Fprintf(os.Stdout, "Successful exec")
+	// fmt.Fprintf(os.Stdout, "Successful exec")
 	os.Exit(0)
 }
 
@@ -59,13 +61,44 @@ func matchPattern(line []byte, pattern string) (bool, error) {
 		single_match_allowed = true
 
 	default:
-		// tests for presence or absence of a set of given numbers
+		// assume multiple combination of simple string, word and digit.
+		// implementing a fsa to compute
+		patterns := list.New()
+		patterns = parsePatterns(pattern, patterns)
+
+		for e := patterns.Front(); e != nil; e = e.Next() {
+			fmt.Println(e.Value)
+		}
+
 		m = generatePatternFromChars(m, pattern)
 		single_match_allowed = true
 	}
 
 	val, err := matchPat(line, m, single_match_allowed)
 	return val, err
+}
+
+func parsePatterns(pattern string, patterns *list.List) *list.List {
+	temp_patterns := strings.Split(pattern, " ")
+	for _, pat := range temp_patterns {
+		split_vals := strings.Split(pat, "\\")
+		for _, val := range split_vals {
+			if len(val) == 0 {
+				continue
+			}
+			if val[0] == 'd' || val[0] == 'w' {
+				if len(val) == 1 {
+					patterns.PushBack("\\" + val)
+				} else {
+					patterns.PushBack("\\" + string(val[0]))
+					patterns.PushBack(val[1:])
+				}
+			} else {
+				patterns.PushBack(val)
+			}
+		}
+	}
+	return patterns
 }
 
 func generatePatternFromRange(m map[rune]bool, start rune, end rune) map[rune]bool {
@@ -114,14 +147,14 @@ func createUniversalChars(m map[rune]bool) map[rune]bool {
 }
 
 func matchPat(line []byte, pattern map[rune]bool, single_match_allowed bool) (bool, error) {
-	fmt.Println("===MatchPat===")
-	fmt.Println(string(line), single_match_allowed)
-	fmt.Print("Map: ")
-	for k := range pattern {
-		fmt.Print(string(k))
-	}
-	fmt.Println()
-	fmt.Println("==============")
+	// fmt.Println("===MatchPat===")
+	// fmt.Println(string(line), single_match_allowed)
+	// fmt.Print("Map: ")
+	// for k := range pattern {
+	// 	fmt.Print(string(k))
+	// }
+	// fmt.Println()
+	// fmt.Println("==============")
 
 	single_not_match := false
 
