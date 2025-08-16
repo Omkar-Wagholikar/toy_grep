@@ -48,17 +48,18 @@ func matchPattern(line []byte, pattern string) (bool, error) {
 	single_match_allowed := false
 	switch pattern {
 	case "\\w":
-		m = generatePatternFromRange(m, 'a', 'z')
-		m = generatePatternFromRange(m, 'A', 'Z')
-		m = generatePatternFromRange(m, '0', '9')
+		// tests for presence of atleast 1 alpha numeric char
+		m = createUniversalChars(m)
 		m['_'] = true
 		single_match_allowed = true
 
 	case "\\d":
+		// tests for presence of atleast 1 number
 		m = generatePatternFromRange(m, '0', '9')
 		single_match_allowed = true
 
 	default:
+		// tests for presence or absence of a set of given numbers
 		m = generatePatternFromChars(m, pattern)
 		single_match_allowed = true
 	}
@@ -68,7 +69,7 @@ func matchPattern(line []byte, pattern string) (bool, error) {
 }
 
 func generatePatternFromRange(m map[rune]bool, start rune, end rune) map[rune]bool {
-	fmt.Println("Generate from range", string(start), string(end))
+	// fmt.Println("Generate from range", string(start), string(end))
 	for i := start; i <= end; i++ {
 		m[i] = true
 	}
@@ -76,7 +77,7 @@ func generatePatternFromRange(m map[rune]bool, start rune, end rune) map[rune]bo
 }
 
 func generatePatternFromChars(m map[rune]bool, line string) map[rune]bool {
-	fmt.Println("Generate from chars", line)
+	// fmt.Println("Generate from chars", line)
 	var inside string
 
 	if len(line) > 1 {
@@ -84,9 +85,7 @@ func generatePatternFromChars(m map[rune]bool, line string) map[rune]bool {
 		if inside[0] == '^' {          // when [^abc] is given
 			universal_chars := make(map[rune]bool)
 
-			generatePatternFromRange(universal_chars, 'a', 'z')
-			generatePatternFromRange(universal_chars, 'A', 'Z')
-			generatePatternFromRange(universal_chars, '0', '9')
+			universal_chars = createUniversalChars(universal_chars)
 
 			for _, val := range inside[1:] {
 				delete(universal_chars, val)
@@ -102,6 +101,15 @@ func generatePatternFromChars(m map[rune]bool, line string) map[rune]bool {
 	for _, val := range inside {
 		m[val] = true // Add all characters in the map
 	}
+	return m
+}
+
+func createUniversalChars(m map[rune]bool) map[rune]bool {
+
+	m = generatePatternFromRange(m, 'a', 'z')
+	m = generatePatternFromRange(m, 'A', 'Z')
+	m = generatePatternFromRange(m, '0', '9')
+
 	return m
 }
 
