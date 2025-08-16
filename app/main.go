@@ -60,18 +60,22 @@ func matchPattern(line []byte, pattern string) (bool, error) {
 }
 
 func matchWord(line []byte) (bool, error) {
+	// fmt.Println("this is the match word function")
 
 	for _, char := range string(line) {
 		num := char - '0'
 		cap := char - 'A'
 		sml := char - 'a'
 
-		if (num >= 0 && num <= 9) || (cap >= 0 && cap <= 25) || (sml >= 0 || sml <= 25) {
-			return true, nil
+		if !((num >= 0 && num <= 9) ||
+			(cap >= 0 && cap <= 25) ||
+			(sml >= 0 || sml <= 25) ||
+			char == '_') {
+			return false, nil
 		}
 	}
-
-	return false, nil
+	// fmt.Println("matchWord completed successfully")
+	return true, nil
 }
 
 func matchDigit(line []byte) (bool, error) {
