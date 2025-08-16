@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"unicode/utf8"
 )
 
 var _ = bytes.ContainsAny
@@ -40,63 +39,77 @@ func main() {
 		os.Exit(1)
 	}
 
-	// fmt.Fprintf(os.Stdout, "Successful exec")
-	// default exit code is 0 which means success
+	fmt.Fprintf(os.Stdout, "Successful exec")
 	os.Exit(0)
 }
 
 func matchPattern(line []byte, pattern string) (bool, error) {
-	// fmt.Println("this is the match pattern function", pattern)
-	// fmt.Println(pattern)
+	m := make(map[rune]bool)
+	single_match_allowed := false
+	switch pattern {
+	case "\\w":
+		generatePatternFromRange(m, 'a', 'z')
+		generatePatternFromRange(m, 'A', 'Z')
+		generatePatternFromRange(m, '0', '9')
+		m['_'] = true
+		single_match_allowed = true
 
-	if pattern == "\\d" {
-		return matchDigit(line)
-	} else if pattern == "\\w" {
-		return matchWord(line)
+	case "\\d":
+		generatePatternFromRange(m, '0', '9')
+		single_match_allowed = true
+
+	default:
+		generatePatternFromChars(m, pattern)
+		single_match_allowed = true
 	}
-	{
-		return matchLine(line, pattern)
-	}
+
+	val, err := matchPat(line, m, single_match_allowed)
+	return val, err
 }
 
-func matchWord(line []byte) (bool, error) {
-	// fmt.Println("this is the match word function")
+func generatePatternFromRange(m map[rune]bool, start rune, end rune) map[rune]bool {
+	fmt.Println("Generate from range", string(start), string(end))
+	for i := start; i <= end; i++ {
+		m[i] = true
+	}
+	return m
+}
 
-	for _, char := range string(line) {
-		num := char - '0'
-		cap := char - 'A'
-		sml := char - 'a'
+func generatePatternFromChars(m map[rune]bool, line string) map[rune]bool {
+	fmt.Println("Generate from chars", line)
+	var inside string
 
-		if (num >= 0 && num <= 9) ||
-			(cap >= 0 && cap <= 25) ||
-			(sml >= 0 && sml <= 25) ||
-			char == '_' {
+	if len(line) > 1 {
+		inside = line[1 : len(line)-1] // when [abc] is given
+	} else {
+		inside = line // when "a" is given
+	}
+
+	for _, val := range inside {
+		m[val] = true // Add all characters in the map
+	}
+	return m
+}
+
+func matchPat(line []byte, pattern map[rune]bool, single_match_allowed bool) (bool, error) {
+	fmt.Println("===MatchPat===")
+	fmt.Println(string(line), single_match_allowed)
+	for k := range pattern {
+		fmt.Print(string(k))
+	}
+	fmt.Println()
+	fmt.Println("==============")
+
+	single_not_match := false
+
+	for _, val := range string(line) {
+		_, ok := pattern[val]
+		if !ok {
+			single_not_match = true
+		} else if single_match_allowed {
 			return true, nil
 		}
 	}
-	// fmt.Println("matchWord completed successfully")
-	return false, nil
-}
 
-func matchDigit(line []byte) (bool, error) {
-
-	for _, char := range string(line) {
-		num := char - '0'
-		if num >= 0 && num <= 9 {
-			return true, nil
-		}
-	}
-
-	return false, nil
-}
-
-func matchLine(line []byte, pattern string) (bool, error) {
-	// fmt.Println("this is the match line function")
-	if utf8.RuneCountInString(pattern) != 1 {
-		return false, fmt.Errorf("unsupported pattern: %q", pattern)
-	}
-
-	var ok bool = bytes.ContainsAny(line, pattern)
-
-	return ok, nil
+	return !single_not_match, nil
 }
