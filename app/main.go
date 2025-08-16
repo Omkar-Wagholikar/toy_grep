@@ -29,15 +29,18 @@ func main() {
 	ok, err := matchPattern(line, pattern)
 
 	if err != nil {
+		fmt.Println("err != nil")
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(2)
 	}
 
 	if !ok {
+		fmt.Println("!ok")
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(1)
 	}
 
-	fmt.Fprintf(os.Stdout, "Successful exec")
+	// fmt.Fprintf(os.Stdout, "Successful exec")
 	// default exit code is 0 which means success
 	os.Exit(0)
 }
@@ -56,7 +59,7 @@ func matchPattern(line []byte, pattern string) (bool, error) {
 func matchDigit(line []byte, pattern string) (bool, error) {
 
 	for _, char := range string(line) {
-		num := char - 'a'
+		num := char - '0'
 		if num >= 0 && num <= 9 {
 			return true, nil
 		}
