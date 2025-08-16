@@ -44,8 +44,9 @@ func main() {
 
 func matchPattern(line []byte, pattern string) (bool, error) {
 	// fmt.Println("this is the match pattern function", pattern)
+	// fmt.Println(pattern)
 
-	if pattern == "d" {
+	if pattern == "\\d" {
 		return matchDigit(line, pattern)
 	} else {
 		return matchLine(line, pattern)
@@ -53,10 +54,6 @@ func matchPattern(line []byte, pattern string) (bool, error) {
 }
 
 func matchDigit(line []byte, pattern string) (bool, error) {
-	// fmt.Println("this is the match digit function")
-	if utf8.RuneCountInString(pattern) != 1 {
-		return false, fmt.Errorf("unsupported pattern: %q", pattern)
-	}
 
 	for _, char := range string(line) {
 		num := char - 'a'
