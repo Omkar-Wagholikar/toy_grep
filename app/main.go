@@ -50,13 +50,31 @@ func matchPattern(line []byte, pattern string) (bool, error) {
 	// fmt.Println(pattern)
 
 	if pattern == "\\d" {
-		return matchDigit(line, pattern)
-	} else {
+		return matchDigit(line)
+	} else if pattern == "\\w" {
+		return matchWord(line)
+	}
+	{
 		return matchLine(line, pattern)
 	}
 }
 
-func matchDigit(line []byte, pattern string) (bool, error) {
+func matchWord(line []byte) (bool, error) {
+
+	for _, char := range string(line) {
+		num := char - '0'
+		cap := char - 'A'
+		sml := char - 'a'
+
+		if (num >= 0 && num <= 9) || (cap >= 0 && cap <= 25) || (sml >= 0 || sml <= 25) {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+func matchDigit(line []byte) (bool, error) {
 
 	for _, char := range string(line) {
 		num := char - '0'
