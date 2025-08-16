@@ -48,18 +48,18 @@ func matchPattern(line []byte, pattern string) (bool, error) {
 	single_match_allowed := false
 	switch pattern {
 	case "\\w":
-		generatePatternFromRange(m, 'a', 'z')
-		generatePatternFromRange(m, 'A', 'Z')
-		generatePatternFromRange(m, '0', '9')
+		m = generatePatternFromRange(m, 'a', 'z')
+		m = generatePatternFromRange(m, 'A', 'Z')
+		m = generatePatternFromRange(m, '0', '9')
 		m['_'] = true
 		single_match_allowed = true
 
 	case "\\d":
-		generatePatternFromRange(m, '0', '9')
+		m = generatePatternFromRange(m, '0', '9')
 		single_match_allowed = true
 
 	default:
-		generatePatternFromChars(m, pattern)
+		m = generatePatternFromChars(m, pattern)
 		single_match_allowed = true
 	}
 
@@ -81,6 +81,20 @@ func generatePatternFromChars(m map[rune]bool, line string) map[rune]bool {
 
 	if len(line) > 1 {
 		inside = line[1 : len(line)-1] // when [abc] is given
+		if inside[0] == '^' {          // when [^abc] is given
+			universal_chars := make(map[rune]bool)
+
+			generatePatternFromRange(universal_chars, 'a', 'z')
+			generatePatternFromRange(universal_chars, 'A', 'Z')
+			generatePatternFromRange(universal_chars, '0', '9')
+
+			for _, val := range inside[1:] {
+				delete(universal_chars, val)
+			}
+
+			m = universal_chars
+			return universal_chars
+		}
 	} else {
 		inside = line // when "a" is given
 	}
@@ -94,6 +108,7 @@ func generatePatternFromChars(m map[rune]bool, line string) map[rune]bool {
 func matchPat(line []byte, pattern map[rune]bool, single_match_allowed bool) (bool, error) {
 	fmt.Println("===MatchPat===")
 	fmt.Println(string(line), single_match_allowed)
+	fmt.Print("Map: ")
 	for k := range pattern {
 		fmt.Print(string(k))
 	}
