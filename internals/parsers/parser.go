@@ -1,6 +1,9 @@
 package parsers
 
-import "container/list"
+import (
+	"container/list"
+	"fmt"
+)
 
 func ParsePatterns(pattern string) (*list.List, error) {
 	patterns := list.New()
@@ -41,11 +44,35 @@ func ParsePatterns(pattern string) (*list.List, error) {
 				patterns.PushBack("[")
 				i++
 			}
+		} else if runes[i] == '+' {
+			// handle one or many +
+			var last_val = patterns.Back()
+			patterns.Remove(patterns.Back())
+
+			if last_val == nil {
+				return nil, fmt.Errorf("Error in parsing")
+			}
+
+			last_pat := last_val.Value.(string)
+			var last_char string = string(last_pat[len(last_pat)-1])
+			var rest_patt string = last_pat[1 : len(last_pat)-1]
+
+			if len(rest_patt) > 0 {
+				patterns.PushBack(rest_patt)
+			}
+
+			patterns.PushBack("+" + last_char)
+
 		} else {
 			// Collect normal characters until next special character
 			j := i
-			for j < len(runes) && runes[j] != '\\' && runes[j] != '[' {
+			for j < len(runes) && runes[j] != '\\' && runes[j] != '[' && runes[j] != '+' {
 				j++
+			}
+			if j-2 >= 0 && runes[j] == '+' {
+				pos_str := string(runes[j-1 : j])
+				patterns.PushBack(pos_str)
+				j -= 2
 			}
 			if j > i {
 				substr := string(runes[i:j])

@@ -2,6 +2,7 @@ package matchers
 
 import (
 	"container/list"
+	"fmt"
 	"grep-go/internals/parsers"
 )
 
@@ -9,6 +10,11 @@ func MatchPattern(line []byte, pattern string) (bool, error) {
 	runes := []rune(string(line))
 
 	patterns, err := parsers.ParsePatterns(pattern)
+	for ele := patterns.Front(); ele != nil; ele = ele.Next() {
+		fmt.Print(ele.Value.(string), " ")
+	}
+	fmt.Println()
+
 	if err != nil {
 		return false, err
 	}
@@ -98,6 +104,10 @@ func matchIndividualPattern(runes []rune, pattern string, index int) (bool, int,
 		// literal substring "\w"
 		return matchCompleteSubString(runes, `\w`, index)
 
+	case pattern[0] == '+':
+		// matching +
+		return matchOneorMore(runes, pattern, index)
+
 	case len(pattern) > 0 && pattern[0] == '[':
 		return matchCharacterClass(runes, pattern, index)
 
@@ -105,6 +115,11 @@ func matchIndividualPattern(runes []rune, pattern string, index int) (bool, int,
 		// Literal substring match
 		return matchCompleteSubString(runes, pattern, index)
 	}
+}
+
+func matchOneorMore(runes []rune, pattern string, index int) (bool, int, error) {
+
+	return false, -1, nil
 }
 
 func matchCharacterClass(runes []rune, pattern string, index int) (bool, int, error) {
