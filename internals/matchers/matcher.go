@@ -10,12 +10,12 @@ func MatchPattern(line []byte, pattern string) (bool, error) {
 	runes := []rune(string(line))
 
 	patterns, err := parsers.ParsePatterns(pattern)
-	// fmt.Println("== Patterns == ")
-	// for ele := patterns.Front(); ele != nil; ele = ele.Next() {
-	// 	fmt.Print(ele.Value.(string), " ")
-	// }
-	// fmt.Println()
-	// fmt.Println("== done ==")
+	fmt.Println("== Patterns == ")
+	for ele := patterns.Front(); ele != nil; ele = ele.Next() {
+		fmt.Print(ele.Value.(string), " ")
+	}
+	fmt.Println()
+	fmt.Println("== done ==")
 
 	if err != nil {
 		return false, err
@@ -115,12 +115,48 @@ func matchIndividualPattern(runes []rune, pattern string, index int, pat *list.E
 		// matching +
 		return matchOneOrMoreBacktracking(runes, pattern, index, pat)
 
+	case pattern[0] == '?':
+		return matchOneOrNone(runes, pattern, index)
+
 	case len(pattern) > 0 && pattern[0] == '[':
 		return matchCharacterClass(runes, pattern, index)
 
 	default:
 		// Literal substring match
 		return matchCompleteSubString(runes, pattern, index)
+	}
+}
+
+func matchOneOrNone(runes []rune, pattern string, index int) (bool, int, error) {
+	if index >= len(runes) {
+		return false, -1, nil
+	}
+
+	// Remove the + to get the character/pattern to match
+	basePattern := pattern[1:]
+
+	// Handle different base patterns
+	var matches func(rune) bool
+
+	if basePattern == "\\d" {
+		matches = isDigit
+	} else if basePattern == "\\w" {
+		matches = isAlphanumeric
+	} else if len(basePattern) == 1 {
+		// Single character
+		char := rune(basePattern[0])
+		matches = func(r rune) bool { return r == char }
+	} else {
+		// For more multi character pattern, custom implementation is needed
+		return false, -1, fmt.Errorf("unsupported pattern with +: %s", pattern)
+	}
+
+	// case when no occourance is detected
+	if !matches(runes[index]) {
+		// fmt.Println("First index no match", matches(runes[index]), string(runes[index]))
+		return true, index, nil
+	} else {
+		return true, index + 1, nil
 	}
 }
 

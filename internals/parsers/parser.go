@@ -61,11 +61,29 @@ func ParsePatterns(pattern string) (*list.List, error) {
 			}
 
 			patterns.PushBack("+" + last_char)
+		} else if runes[i] == '?' {
+			// handle one or none ?
+			fmt.Println("here")
+			var last_val = patterns.Back()
+			patterns.Remove(patterns.Back())
 
+			if last_val == nil {
+				return nil, fmt.Errorf("error in parsing")
+			}
+
+			last_pat := last_val.Value.(string)
+			var last_char string = string(last_pat[len(last_pat)-1])
+			var rest_patt string = last_pat[1 : len(last_pat)-1]
+
+			if len(rest_patt) > 0 {
+				patterns.PushBack(rest_patt)
+			}
+
+			patterns.PushBack("?" + last_char)
 		} else {
 			// Collect normal characters until next special character
 			j := i
-			for j < len(runes) && runes[j] != '\\' && runes[j] != '[' && runes[j] != '+' {
+			for j < len(runes) && runes[j] != '\\' && runes[j] != '[' && runes[j] != '+' && runes[j] != '?' {
 				j++
 			}
 
@@ -76,6 +94,15 @@ func ParsePatterns(pattern string) (*list.List, error) {
 				pos_str := "+" + string(runes[j-1:j])
 				patterns.PushBack(pos_str)
 				// fmt.Println("=>", pos_str, ",", substr, ",", string(runes[i:j]), ", ", string(runes[j+1]))
+				i = j + 1
+				continue
+
+			} else if j-2 >= 0 && j < len(runes) && runes[j] == '?' {
+				// "ca?ts"
+				substr := string(runes[i : j-1])
+				patterns.PushBack(substr)
+				pos_str := "?" + string(runes[j-1:j])
+				patterns.PushBack(pos_str)
 				i = j + 1
 				continue
 			}
