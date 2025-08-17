@@ -9,7 +9,6 @@ func ParsePatterns(pattern string) (*list.List, error) {
 	patterns := list.New()
 	runes := []rune(pattern)
 	i := 0
-
 	for i < len(runes) {
 		if runes[i] == '\\' && i+1 < len(runes) {
 			if i+1 < len(runes) && runes[i+1] == '\\' {
@@ -50,7 +49,7 @@ func ParsePatterns(pattern string) (*list.List, error) {
 			patterns.Remove(patterns.Back())
 
 			if last_val == nil {
-				return nil, fmt.Errorf("Error in parsing")
+				return nil, fmt.Errorf("error in parsing")
 			}
 
 			last_pat := last_val.Value.(string)
@@ -69,10 +68,16 @@ func ParsePatterns(pattern string) (*list.List, error) {
 			for j < len(runes) && runes[j] != '\\' && runes[j] != '[' && runes[j] != '+' {
 				j++
 			}
-			if j-2 >= 0 && runes[j] == '+' {
-				pos_str := string(runes[j-1 : j])
+
+			if j-2 >= 0 && j < len(runes) && runes[j] == '+' {
+				// "ca+ts" should accept cats and caats
+				substr := string(runes[i : j-1])
+				patterns.PushBack(substr)
+				pos_str := "+" + string(runes[j-1:j])
 				patterns.PushBack(pos_str)
-				j -= 2
+				// fmt.Println("=>", pos_str, ",", substr, ",", string(runes[i:j]), ", ", string(runes[j+1]))
+				i = j + 1
+				continue
 			}
 			if j > i {
 				substr := string(runes[i:j])
@@ -81,5 +86,6 @@ func ParsePatterns(pattern string) (*list.List, error) {
 			i = j
 		}
 	}
+	fmt.Println("Parse complete")
 	return patterns, nil
 }

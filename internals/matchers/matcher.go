@@ -10,10 +10,12 @@ func MatchPattern(line []byte, pattern string) (bool, error) {
 	runes := []rune(string(line))
 
 	patterns, err := parsers.ParsePatterns(pattern)
-	for ele := patterns.Front(); ele != nil; ele = ele.Next() {
-		fmt.Print(ele.Value.(string), " ")
-	}
-	fmt.Println()
+	// fmt.Println("== Patterns == ")
+	// for ele := patterns.Front(); ele != nil; ele = ele.Next() {
+	// 	fmt.Print(ele.Value.(string), " ")
+	// }
+	// fmt.Println()
+	// fmt.Println("== done ==")
 
 	if err != nil {
 		return false, err
@@ -25,7 +27,7 @@ func MatchPattern(line []byte, pattern string) (bool, error) {
 
 	if first[0] == '^' {
 		// handle string anchor for string beginning
-		status, start_index, err = matchIndividualPattern(runes, first[1:], 0)
+		status, start_index, err = matchIndividualPattern(runes, first[1:], 0, nil)
 
 		if err != nil || !status {
 			return false, err
@@ -38,7 +40,7 @@ func MatchPattern(line []byte, pattern string) (bool, error) {
 
 	// Try matching the entire pattern sequence starting at each position
 	for startPos := start_index; startPos <= len(runes); startPos++ {
-		if matchPatternsFromPosition(runes, patterns, startPos) {
+		if matchPatternsFromPosition(runes, patterns.Front(), startPos) {
 			return true, nil
 		}
 	}
@@ -46,10 +48,10 @@ func MatchPattern(line []byte, pattern string) (bool, error) {
 	return false, nil
 }
 
-func matchPatternsFromPosition(runes []rune, patterns *list.List, startPos int) bool {
+func matchPatternsFromPosition(runes []rune, patterns *list.Element, startPos int) bool {
 	currentPos := startPos
 	end_detect := false
-	for pat := patterns.Front(); pat != nil; pat = pat.Next() {
+	for pat := patterns; pat != nil; pat = pat.Next() {
 		pat_string := pat.Value.(string)
 		end_detect = false
 
@@ -58,9 +60,10 @@ func matchPatternsFromPosition(runes []rune, patterns *list.List, startPos int) 
 			end_detect = true
 		}
 
-		found, nextPos, err := matchIndividualPattern(runes, pat_string, currentPos)
+		found, nextPos, err := matchIndividualPattern(runes, pat_string, currentPos, pat)
 
 		if err != nil {
+			fmt.Println(err)
 			return false
 		}
 
@@ -84,9 +87,13 @@ func matchPatternsFromPosition(runes []rune, patterns *list.List, startPos int) 
 	return true
 }
 
-func matchIndividualPattern(runes []rune, pattern string, index int) (bool, int, error) {
+func matchIndividualPattern(runes []rune, pattern string, index int, pat *list.Element) (bool, int, error) {
 	if index > len(runes) {
 		return false, -1, nil
+	}
+
+	if index == -1 {
+		return false, -1, fmt.Errorf("invalid index detected: %d", index)
 	}
 
 	switch {
@@ -106,7 +113,7 @@ func matchIndividualPattern(runes []rune, pattern string, index int) (bool, int,
 
 	case pattern[0] == '+':
 		// matching +
-		return matchOneorMore(runes, pattern, index)
+		return matchOneOrMoreBacktracking(runes, pattern, index, pat)
 
 	case len(pattern) > 0 && pattern[0] == '[':
 		return matchCharacterClass(runes, pattern, index)
@@ -117,9 +124,50 @@ func matchIndividualPattern(runes []rune, pattern string, index int) (bool, int,
 	}
 }
 
-func matchOneorMore(runes []rune, pattern string, index int) (bool, int, error) {
+func matchOneOrMoreBacktracking(runes []rune, pattern string, index int, pat *list.Element) (bool, int, error) {
+	if index >= len(runes) {
+		return false, -1, nil
+	}
 
-	return false, -1, nil
+	// Remove the + to get the character/pattern to match
+	basePattern := pattern[1:]
+
+	// Handle different base patterns
+	var matches func(rune) bool
+
+	if basePattern == "\\d" {
+		matches = isDigit
+	} else if basePattern == "\\w" {
+		matches = isAlphanumeric
+	} else if len(basePattern) == 1 {
+		// Single character
+		char := rune(basePattern[0])
+		matches = func(r rune) bool { return r == char }
+	} else {
+		// For more multi character pattern, custom implementation is needed
+		return false, -1, fmt.Errorf("unsupported pattern with +: %s", pattern)
+	}
+
+	// case when no occourance is detected
+	if !matches(runes[index]) {
+		fmt.Println("First index no match", matches(runes[index]), string(runes[index]))
+		return false, -1, nil
+	}
+
+	// Match as many as possible while looking ahead
+	i := index
+	pat = pat.Next()
+
+	for i < len(runes) && matches(runes[i]) { // this only checks for overlapping queries
+		if matchPatternsFromPosition(runes, pat, i) {
+			fmt.Println("total match found under overlapping + query")
+			return true, i, nil
+		}
+		i++
+	}
+
+	// this is in case there is no overlap
+	return true, index + 1, nil
 }
 
 func matchCharacterClass(runes []rune, pattern string, index int) (bool, int, error) {
@@ -172,6 +220,8 @@ func matchSingleCharacter(runes []rune, predicate func(rune) bool, index int) (b
 
 func matchCompleteSubString(runes []rune, pattern string, index int) (bool, int, error) {
 	patRunes := []rune(pattern)
+
+	// fmt.Println("Checking:", pattern, index)
 
 	if index+len(patRunes) > len(runes) {
 		return false, -1, nil
