@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strings"
 )
 
 var _ = bytes.ContainsAny
@@ -18,10 +17,9 @@ func main() {
 		os.Exit(2) // 1 means no lines were selected, >1 means error
 	}
 
-	// flag := os.Args[1]
 	pattern := os.Args[2]
 
-	line, err := io.ReadAll(os.Stdin) // assuming we're only dealing with a single line
+	line, err := io.ReadAll(os.Stdin)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: read input text: %v\n", err)
 		os.Exit(2)
@@ -30,142 +28,201 @@ func main() {
 	ok, err := matchPattern(line, pattern)
 
 	if err != nil {
-		fmt.Println("err != nil")
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(2)
 	}
 
 	if !ok {
-		fmt.Println("!ok")
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(1)
 	}
 
-	// fmt.Fprintf(os.Stdout, "Successful exec")
 	os.Exit(0)
 }
 
 func matchPattern(line []byte, pattern string) (bool, error) {
-	m := make(map[rune]bool)
-	single_match_allowed := false
-	switch pattern {
-	case "\\w":
-		// tests for presence of atleast 1 alpha numeric char
-		m = createUniversalChars(m)
-		m['_'] = true
-		single_match_allowed = true
+	runes := []rune(string(line))
 
-	case "\\d":
-		// tests for presence of atleast 1 number
-		m = generatePatternFromRange(m, '0', '9')
-		single_match_allowed = true
-
-	default:
-		// assume multiple combination of simple string, word and digit.
-		// implementing a fsa to compute
-		patterns := list.New()
-		patterns = parsePatterns(pattern, patterns)
-
-		for e := patterns.Front(); e != nil; e = e.Next() {
-			fmt.Println(e.Value)
-		}
-
-		m = generatePatternFromChars(m, pattern)
-		single_match_allowed = true
+	patterns, err := parsePatterns(pattern)
+	if err != nil {
+		return false, err
 	}
 
-	val, err := matchPat(line, m, single_match_allowed)
-	return val, err
-}
-
-func parsePatterns(pattern string, patterns *list.List) *list.List {
-	temp_patterns := strings.Split(pattern, " ")
-	for _, pat := range temp_patterns {
-		split_vals := strings.Split(pat, "\\")
-		for _, val := range split_vals {
-			if len(val) == 0 {
-				continue
-			}
-			if val[0] == 'd' || val[0] == 'w' {
-				if len(val) == 1 {
-					patterns.PushBack("\\" + val)
-				} else {
-					patterns.PushBack("\\" + string(val[0]))
-					patterns.PushBack(val[1:])
-				}
-			} else {
-				patterns.PushBack(val)
-			}
-		}
-	}
-	return patterns
-}
-
-func generatePatternFromRange(m map[rune]bool, start rune, end rune) map[rune]bool {
-	// fmt.Println("Generate from range", string(start), string(end))
-	for i := start; i <= end; i++ {
-		m[i] = true
-	}
-	return m
-}
-
-func generatePatternFromChars(m map[rune]bool, line string) map[rune]bool {
-	// fmt.Println("Generate from chars", line)
-	var inside string
-
-	if len(line) > 1 {
-		inside = line[1 : len(line)-1] // when [abc] is given
-		if inside[0] == '^' {          // when [^abc] is given
-			universal_chars := make(map[rune]bool)
-
-			universal_chars = createUniversalChars(universal_chars)
-
-			for _, val := range inside[1:] {
-				delete(universal_chars, val)
-			}
-
-			m = universal_chars
-			return universal_chars
-		}
-	} else {
-		inside = line // when "a" is given
-	}
-
-	for _, val := range inside {
-		m[val] = true // Add all characters in the map
-	}
-	return m
-}
-
-func createUniversalChars(m map[rune]bool) map[rune]bool {
-
-	m = generatePatternFromRange(m, 'a', 'z')
-	m = generatePatternFromRange(m, 'A', 'Z')
-	m = generatePatternFromRange(m, '0', '9')
-
-	return m
-}
-
-func matchPat(line []byte, pattern map[rune]bool, single_match_allowed bool) (bool, error) {
-	// fmt.Println("===MatchPat===")
-	// fmt.Println(string(line), single_match_allowed)
-	// fmt.Print("Map: ")
-	// for k := range pattern {
-	// 	fmt.Print(string(k))
-	// }
-	// fmt.Println()
-	// fmt.Println("==============")
-
-	single_not_match := false
-
-	for _, val := range string(line) {
-		_, ok := pattern[val]
-		if !ok {
-			single_not_match = true
-		} else if single_match_allowed {
+	// Try matching the entire pattern sequence starting at each position
+	for startPos := 0; startPos <= len(runes); startPos++ {
+		if matchPatternsFromPosition(runes, patterns, startPos) {
 			return true, nil
 		}
 	}
 
-	return !single_not_match, nil
+	return false, nil
+}
+
+func matchPatternsFromPosition(runes []rune, patterns *list.List, startPos int) bool {
+	currentPos := startPos
+
+	for pat := patterns.Front(); pat != nil; pat = pat.Next() {
+		found, nextPos, err := matchIndividualPattern(runes, pat.Value.(string), currentPos)
+		if err != nil || !found {
+			return false
+		}
+		currentPos = nextPos
+	}
+
+	return true
+}
+
+func parsePatterns(pattern string) (*list.List, error) {
+	patterns := list.New()
+	runes := []rune(pattern)
+	i := 0
+
+	for i < len(runes) {
+		if runes[i] == '\\' && i+1 < len(runes) {
+			if i+1 < len(runes) && runes[i+1] == '\\' {
+				// This is \\something - literal backslash followed by something
+				if i+2 < len(runes) {
+					esc := string(runes[i : i+3]) // "\\d" or "\\w"
+					patterns.PushBack(esc)
+					i += 3
+				} else {
+					// Just "\\" at end
+					patterns.PushBack("\\")
+					i += 2
+				}
+			} else {
+				// This is \something - escape sequence
+				esc := string(runes[i : i+2]) // "\d" or "\w"
+				patterns.PushBack(esc)
+				i += 2
+			}
+		} else if runes[i] == '[' {
+			// Handle character class [abc] or [^abc]
+			j := i + 1
+			for j < len(runes) && runes[j] != ']' {
+				j++
+			}
+			if j < len(runes) {
+				charClass := string(runes[i : j+1]) // include the ]
+				patterns.PushBack(charClass)
+				i = j + 1
+			} else {
+				// No closing ], treat [ as literal
+				patterns.PushBack("[")
+				i++
+			}
+		} else {
+			// Collect normal characters until next special character
+			j := i
+			for j < len(runes) && runes[j] != '\\' && runes[j] != '[' {
+				j++
+			}
+			if j > i {
+				substr := string(runes[i:j])
+				patterns.PushBack(substr)
+			}
+			i = j
+		}
+	}
+	return patterns, nil
+}
+
+func matchIndividualPattern(runes []rune, pattern string, index int) (bool, int, error) {
+	if index > len(runes) {
+		return false, -1, nil
+	}
+
+	switch {
+	case pattern == "\\w":
+		return matchSingleCharacter(runes, isAlphanumeric, index)
+
+	case pattern == "\\d":
+		return matchSingleCharacter(runes, isDigit, index)
+
+	case pattern == "\\\\d":
+		// literal substring "\d"
+		return matchCompleteSubString(runes, `\d`, index)
+
+	case pattern == "\\\\w":
+		// literal substring "\w"
+		return matchCompleteSubString(runes, `\w`, index)
+
+	case len(pattern) > 0 && pattern[0] == '[':
+		return matchCharacterClass(runes, pattern, index)
+
+	default:
+		// Literal substring match
+		return matchCompleteSubString(runes, pattern, index)
+	}
+}
+
+func matchCharacterClass(runes []rune, pattern string, index int) (bool, int, error) {
+	if index >= len(runes) {
+		return false, -1, nil
+	}
+
+	// Parse character class [abc] or [^abc]
+	negated := false
+	chars := pattern[1 : len(pattern)-1] // remove [ and ]
+
+	if len(chars) > 0 && chars[0] == '^' {
+		negated = true
+		chars = chars[1:]
+	}
+
+	targetChar := runes[index]
+	found := false
+
+	// Check if character is in the class
+	for _, char := range chars {
+		if targetChar == char {
+			found = true
+			break
+		}
+	}
+
+	if negated {
+		found = !found
+	}
+
+	if found {
+		return true, index + 1, nil
+	}
+
+	return false, -1, nil
+}
+
+func matchSingleCharacter(runes []rune, predicate func(rune) bool, index int) (bool, int, error) {
+	if index >= len(runes) {
+		return false, -1, nil
+	}
+
+	if predicate(runes[index]) {
+		return true, index + 1, nil
+	}
+
+	return false, -1, nil
+}
+
+func matchCompleteSubString(runes []rune, pattern string, index int) (bool, int, error) {
+	patRunes := []rune(pattern)
+
+	if index+len(patRunes) > len(runes) {
+		return false, -1, nil
+	}
+
+	for j := 0; j < len(patRunes); j++ {
+		if runes[index+j] != patRunes[j] {
+			return false, -1, nil
+		}
+	}
+
+	return true, index + len(patRunes), nil
+}
+
+func isDigit(r rune) bool {
+	return r >= '0' && r <= '9'
+}
+
+func isAlphanumeric(r rune) bool {
+	return (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '_'
 }
