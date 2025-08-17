@@ -13,8 +13,25 @@ func MatchPattern(line []byte, pattern string) (bool, error) {
 		return false, err
 	}
 
+	var first string = patterns.Front().Value.(string)
+	var start_index int
+	var status bool
+
+	if first[0] == '^' {
+		// handle string anchor
+		status, start_index, err = matchIndividualPattern(runes, first[1:], 0)
+
+		if err != nil || !status {
+			return false, err
+		}
+
+		patterns.Remove(patterns.Front())
+	} else {
+		start_index = 0
+	}
+
 	// Try matching the entire pattern sequence starting at each position
-	for startPos := 0; startPos <= len(runes); startPos++ {
+	for startPos := start_index; startPos <= len(runes); startPos++ {
 		if matchPatternsFromPosition(runes, patterns, startPos) {
 			return true, nil
 		}

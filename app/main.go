@@ -33,8 +33,10 @@ func main() {
 	}
 
 	if !ok {
+		fmt.Println("Error, exit with 1")
 		os.Exit(1)
 	}
 
+	fmt.Println("Successful execution")
 	os.Exit(0)
 }
