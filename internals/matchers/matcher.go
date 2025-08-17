@@ -18,7 +18,7 @@ func MatchPattern(line []byte, pattern string) (bool, error) {
 	var status bool
 
 	if first[0] == '^' {
-		// handle string anchor
+		// handle string anchor for string beginning
 		status, start_index, err = matchIndividualPattern(runes, first[1:], 0)
 
 		if err != nil || !status {
@@ -42,13 +42,37 @@ func MatchPattern(line []byte, pattern string) (bool, error) {
 
 func matchPatternsFromPosition(runes []rune, patterns *list.List, startPos int) bool {
 	currentPos := startPos
-
+	end_detect := false
 	for pat := patterns.Front(); pat != nil; pat = pat.Next() {
-		found, nextPos, err := matchIndividualPattern(runes, pat.Value.(string), currentPos)
-		if err != nil || !found {
+		pat_string := pat.Value.(string)
+		end_detect = false
+
+		if pat_string[len(pat_string)-1] == '$' {
+			pat_string = pat_string[0 : len(pat_string)-1]
+			end_detect = true
+		}
+
+		found, nextPos, err := matchIndividualPattern(runes, pat_string, currentPos)
+
+		if err != nil {
 			return false
 		}
+
 		currentPos = nextPos
+
+		if end_detect {
+			// handle string anchor for string beginning
+			input_text_length := len(string(runes))
+			if found && input_text_length == currentPos {
+				return true
+			} else {
+				return false
+			}
+		}
+
+		if !found {
+			return false
+		}
 	}
 
 	return true
