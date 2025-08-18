@@ -12,7 +12,7 @@ func MatchPattern(line []byte, pattern string) (bool, error) {
 	patterns, err := parsers.ParsePatterns(pattern)
 	fmt.Println("== Patterns == ")
 	for ele := patterns.Front(); ele != nil; ele = ele.Next() {
-		fmt.Print(ele.Value.(string), " ")
+		fmt.Println("-\t", ele.Value.(string), " ")
 	}
 	fmt.Println()
 	fmt.Println("== done ==")
@@ -111,6 +111,13 @@ func matchIndividualPattern(runes []rune, pattern string, index int, pat *list.E
 		// literal substring "\w"
 		return matchCompleteSubString(runes, `\w`, index)
 
+	case pattern == ".+":
+		// Handle .+ pattern (one or more of any character)
+		return matchDotPlusBacktracking(runes, pattern, index, pat)
+
+	case pattern[0] == '.':
+		fmt.Println("Matching .")
+		return matchWildCard(runes, pattern, index)
 	case pattern[0] == '+':
 		// matching +
 		return matchOneOrMoreBacktracking(runes, pattern, index, pat)
@@ -125,6 +132,44 @@ func matchIndividualPattern(runes []rune, pattern string, index int, pat *list.E
 		// Literal substring match
 		return matchCompleteSubString(runes, pattern, index)
 	}
+}
+
+func matchDotPlusBacktracking(runes []rune, pattern string, index int, pat *list.Element) (bool, int, error) {
+	if index >= len(runes) {
+		return false, -1, nil
+	}
+
+	// .+ must match at least one character
+	if index >= len(runes) {
+		return false, -1, nil
+	}
+
+	// Get the next pattern in the sequence
+	nextPat := pat.Next()
+
+	// If this is the last pattern, match all remaining characters
+	if nextPat == nil {
+		return true, len(runes), nil
+	}
+
+	// Try matching from the longest possible match down to the minimum (1 character)
+	// This implements greedy matching with backtracking
+	for endPos := len(runes); endPos > index; endPos-- {
+		// Try to match the rest of the pattern from this position
+		if matchPatternsFromPosition(runes, nextPat, endPos) {
+			return true, endPos, nil
+		}
+	}
+
+	// If no match found with remaining patterns, just consume one character
+	return true, index + 1, nil
+}
+
+func matchWildCard(runes []rune, pattern string, index int) (bool, int, error) {
+	if index >= len(runes) {
+		return false, -1, fmt.Errorf("index out of bounds for wildcard match")
+	}
+	return true, index + 1, nil
 }
 
 func matchOneOrNone(runes []rune, pattern string, index int) (bool, int, error) {
