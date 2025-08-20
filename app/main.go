@@ -37,6 +37,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Println("Successful execution")
+	fmt.Println("Successful match")
 	os.Exit(0)
 }

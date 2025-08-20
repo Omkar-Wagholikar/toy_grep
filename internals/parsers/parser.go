@@ -4,6 +4,7 @@ import (
 	"container/list"
 	"fmt"
 	"os"
+	"strings"
 )
 
 func ParsePatterns(pattern string) (*list.List, error) {
@@ -13,16 +14,14 @@ func ParsePatterns(pattern string) (*list.List, error) {
 	count := 0
 	for i < len(runes) {
 		count += 1
-		if count == 20 {
+		if count == 100 { // Increased limit for complex patterns
 			fmt.Println("=>", i)
-
 			fmt.Println("== Patterns == ")
 			for ele := patterns.Front(); ele != nil; ele = ele.Next() {
 				fmt.Println("-\t", ele.Value.(string), " ")
 			}
 			fmt.Println()
 			fmt.Println("== done ==")
-
 			os.Exit(3)
 		}
 
@@ -43,6 +42,66 @@ func ParsePatterns(pattern string) (*list.List, error) {
 				esc := string(runes[i : i+2]) // "\d" or "\w"
 				patterns.PushBack(esc)
 				i += 2
+			}
+		} else if runes[i] == '(' {
+			// Handle grouped patterns
+			j := i + 1
+			parenCount := 1
+			for j < len(runes) && parenCount > 0 {
+				if runes[j] == '(' {
+					parenCount++
+				} else if runes[j] == ')' {
+					parenCount--
+				}
+				j++
+			}
+			if parenCount == 0 {
+				// Found matching closing paren
+				groupContent := string(runes[i+1 : j-1]) // content between ( and )
+
+				// Check if followed by + or ?
+				if j < len(runes) && runes[j] == '+' {
+					// Group with + quantifier - always treat as GRP+ regardless of content
+					patterns.PushBack("GRP+:" + groupContent)
+					i = j + 1
+				} else if j < len(runes) && runes[j] == '?' {
+					// Group with ? quantifier - always treat as GRP? regardless of content
+					patterns.PushBack("GRP?:" + groupContent)
+					i = j + 1
+				} else {
+					// Group without quantifier
+					// Check if this is a simple alternation at the top level
+					// Only treat as ALT: if the entire content is just alternatives separated by |
+					// and no other pattern elements
+					isSimpleAlternation := false
+					if strings.Contains(groupContent, "|") {
+						// Check if it's ONLY alternation (no spaces, quantifiers, etc. outside the alternatives)
+						// For now, let's be more conservative and treat most groups as GRP:
+						// since the group can contain complex sub-patterns
+						parts := strings.Split(groupContent, "|")
+						allSimple := true
+						for _, part := range parts {
+							part = strings.TrimSpace(part)
+							// If any part contains spaces or complex patterns, it's not a simple alternation
+							if strings.Contains(part, " ") || strings.Contains(part, "?") || strings.Contains(part, "+") {
+								allSimple = false
+								break
+							}
+						}
+						isSimpleAlternation = allSimple
+					}
+
+					if isSimpleAlternation {
+						patterns.PushBack("ALT:" + groupContent)
+					} else {
+						patterns.PushBack("GRP:" + groupContent)
+					}
+					i = j
+				}
+			} else {
+				// No closing ), treat ( as literal
+				patterns.PushBack("(")
+				i++
 			}
 		} else if runes[i] == '[' {
 			// Handle character class [abc] or [^abc]
@@ -109,7 +168,7 @@ func ParsePatterns(pattern string) (*list.List, error) {
 		} else {
 			// Collect normal characters until next special character
 			j := i
-			for j < len(runes) && runes[j] != '\\' && runes[j] != '[' && runes[j] != '+' && runes[j] != '?' && runes[j] != '.' {
+			for j < len(runes) && runes[j] != '\\' && runes[j] != '[' && runes[j] != '+' && runes[j] != '?' && runes[j] != '.' && runes[j] != '(' {
 				j++
 			}
 
@@ -164,6 +223,14 @@ func ParsePatterns(pattern string) (*list.List, error) {
 			i = j
 		}
 	}
-	fmt.Println("Parse complete")
+
+	fmt.Println()
+	fmt.Println("== Patterns == ")
+	for ele := patterns.Front(); ele != nil; ele = ele.Next() {
+		fmt.Println("-\t", ele.Value.(string))
+	}
+	fmt.Println()
+	fmt.Println("== done ==")
+
 	return patterns, nil
 }
