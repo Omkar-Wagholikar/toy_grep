@@ -3,28 +3,21 @@ package parsers
 import (
 	"container/list"
 	"fmt"
-	"os"
 	"strings"
 )
 
+var cache = make(map[string]*list.List)
+
 func ParsePatterns(pattern string) (*list.List, error) {
+	var _, exists = cache[pattern]
+	if exists {
+		fmt.Println("Cache hit for", pattern)
+		return cache[pattern], nil
+	}
 	patterns := list.New()
 	runes := []rune(pattern)
 	i := 0
-	count := 0
 	for i < len(runes) {
-		count += 1
-		if count == 100 { // Increased limit for complex patterns
-			fmt.Println("=>", i)
-			fmt.Println("== Patterns == ")
-			for ele := patterns.Front(); ele != nil; ele = ele.Next() {
-				fmt.Println("-\t", ele.Value.(string), " ")
-			}
-			fmt.Println()
-			fmt.Println("== done ==")
-			os.Exit(3)
-		}
-
 		if runes[i] == '\\' && i+1 < len(runes) {
 			if i+1 < len(runes) && runes[i+1] == '\\' {
 				// This is \\something - literal backslash followed by something
@@ -223,6 +216,8 @@ func ParsePatterns(pattern string) (*list.List, error) {
 			i = j
 		}
 	}
+
+	cache[pattern] = patterns
 
 	fmt.Println()
 	fmt.Println("== Patterns == ")
