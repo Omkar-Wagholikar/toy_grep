@@ -3,7 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"grep-go/internals/matchers"
+	"grep-go/internal/matchers"
 	"io"
 	"os"
 )

@@ -3,7 +3,7 @@ package matchers
 import (
 	"container/list"
 	"fmt"
-	"grep-go/internals/parsers"
+	"grep-go/internal/parsers"
 	"strings"
 )
 
