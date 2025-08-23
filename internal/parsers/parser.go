@@ -11,7 +11,7 @@ var cache = make(map[string]*list.List)
 func ParsePatterns(pattern string) (*list.List, error) {
 	var _, exists = cache[pattern]
 	if exists {
-		fmt.Println("Cache hit for", pattern)
+		// fmt.println("Cache hit for", pattern)
 		return cache[pattern], nil
 	}
 	patterns := list.New()
@@ -125,7 +125,7 @@ func ParsePatterns(pattern string) (*list.List, error) {
 			}
 
 			last_pat := last_val.Value.(string)
-			fmt.Println("-->", last_pat)
+			// fmt.println("-->", last_pat)
 
 			var last_char string = string(last_pat[len(last_pat)-1])
 			var rest_patt string = last_pat[0 : len(last_pat)-1]
@@ -219,13 +219,13 @@ func ParsePatterns(pattern string) (*list.List, error) {
 
 	cache[pattern] = patterns
 
-	fmt.Println()
-	fmt.Println("== Patterns == ")
+	// fmt.println()
+	// fmt.println("== Patterns == ")
 	for ele := patterns.Front(); ele != nil; ele = ele.Next() {
-		fmt.Println("-\t", ele.Value.(string))
+		// fmt.println("-\t", ele.Value.(string))
 	}
-	fmt.Println()
-	fmt.Println("== done ==")
+	// fmt.println()
+	// fmt.println("== done ==")
 
 	return patterns, nil
 }

@@ -7,11 +7,6 @@ import (
 	"strings"
 )
 
-// c && echo -n "I see 1 cat, 2 dogs and 3 cows" | ./toy_grep.sh -E "^I see (\d (cat|dog|cow)s?(, | and )?)+$"
-// c && echo -n "1 cat, 2 dogs and 3 cows" | ./toy_grep.sh -E "^(\d (cat|dog|cow)s?(, | and )?)+"
-// c && echo -n ",,," | ./toy_grep.sh -E ".?(, | and )*"
-// c && echo -n "cow" | ./toy_grep.sh -E "cow|dog"
-
 func MatchPattern(line []byte, pattern string) (bool, error) {
 	runes := []rune(string(line))
 	// pattern = strings.ReplaceAll(pattern, " ", "")
@@ -27,9 +22,9 @@ func MatchPattern(line []byte, pattern string) (bool, error) {
 	if first[0] == '^' {
 		// handle string anchor for string beginning
 		status, start_index, err = matchIndividualPattern(runes, first[1:], 0, nil)
-		fmt.Println("Valuse received under mp: ", status)
+		// fmt.println("Valuse received under mp: ", status)
 		if err != nil || !status {
-			fmt.Println("Error here:", status, err)
+			// fmt.println("Error here:", status, err)
 			return false, err
 		}
 		if start_index == 1+len(runes) {
@@ -42,8 +37,8 @@ func MatchPattern(line []byte, pattern string) (bool, error) {
 
 	// Try matching the entire pattern sequence starting at each position
 	for startPos := start_index; startPos <= len(runes); startPos++ {
-		fmt.Println()
-		fmt.Println("Top level check:", string(line))
+		// fmt.println()
+		// fmt.println("Top level check:", string(line))
 		if matchPatternsFromPosition(runes, patterns.Front(), startPos) {
 			return true, nil
 		}
@@ -65,7 +60,7 @@ func matchPatternsFromPosition(runes []rune, patterns *list.Element, startPos in
 			end_detect = true
 		}
 
-		fmt.Println("Matching individual pattern:", pat.Value, "at", startPos)
+		// fmt.println("Matching individual pattern:", pat.Value, "at", startPos)
 
 		// Handle empty pattern after removing $
 		if len(pat_string) == 0 {
@@ -83,19 +78,19 @@ func matchPatternsFromPosition(runes []rune, patterns *list.Element, startPos in
 			}
 		}
 
-		fmt.Println("Calling Match Indivi Pat")
+		// fmt.println("Calling Match Indivi Pat")
 		found, nextPos, err := matchIndividualPattern(runes, pat_string, currentPos, pat)
-		fmt.Println("Value returned by mip: ", found)
+		// fmt.println("Value returned by mip: ", found)
 
 		if err != nil {
-			fmt.Println(err)
+			// fmt.println(err)
 			return false
 		}
 
 		currentPos = nextPos
 
 		if end_detect {
-			fmt.Println("Inside end_detect")
+			// fmt.println("Inside end_detect")
 			// handle string anchor for string end
 			input_text_length := len(runes)
 			if found && input_text_length == currentPos {
@@ -107,7 +102,7 @@ func matchPatternsFromPosition(runes []rune, patterns *list.Element, startPos in
 		}
 
 		if !found {
-			fmt.Println("fail at:", pat.Value)
+			// fmt.println("fail at:", pat.Value)
 			return false
 		}
 	}
@@ -147,36 +142,36 @@ func matchIndividualPattern(runes []rune, pattern string, index int, pat *list.E
 
 	case len(pattern) > 4 && pattern[:4] == "ALT:":
 		// Handle simple alternation pattern
-		fmt.Println("Matching ALT:")
+		// fmt.println("Matching ALT:")
 		return matchAlternation(runes, pattern, index)
 
 	case len(pattern) > 5 && pattern[:4] == "ALT+":
 		// Handle alternation with + quantifier
-		fmt.Println("Matching ALT+")
+		// fmt.println("Matching ALT+")
 		return matchAlternationPlus(runes, pattern, index, pat)
 
 	case len(pattern) > 5 && pattern[:4] == "ALT?":
 		// Handle alternation with ? quantifier
-		fmt.Println("Matching ALT?")
+		// fmt.println("Matching ALT?")
 		return matchAlternationOptional(runes, pattern, index)
 
 	case len(pattern) > 4 && pattern[:4] == "GRP:":
 		// Handle simple group
-		fmt.Println("Matching GRP:")
+		// fmt.println("Matching GRP:")
 		return matchGroup(runes, pattern, index)
 
 	case len(pattern) > 5 && pattern[:4] == "GRP+":
 		// Handle group with + quantifier
-		fmt.Println("Matching GRP+")
+		// fmt.println("Matching GRP+")
 		return matchGroupPlus(runes, pattern, index, pat)
 
 	case len(pattern) > 5 && pattern[:4] == "GRP?":
 		// Handle group with ? quantifier
-		fmt.Println("Matching GRP?")
+		// fmt.println("Matching GRP?")
 		return matchGroupOptional(runes, pattern, index)
 
 	case pattern[0] == '.':
-		fmt.Println("Matching .")
+		// fmt.println("Matching .")
 		return matchWildCard(runes, pattern, index)
 	case pattern[0] == '+':
 		// matching +
@@ -190,9 +185,9 @@ func matchIndividualPattern(runes []rune, pattern string, index int, pat *list.E
 
 	default:
 		// Literal substring match
-		fmt.Println("Matching literal string")
+		// fmt.println("Matching literal string")
 		var b, i, r = matchCompleteSubString(runes, pattern, index)
-		fmt.Println("Value returned is: ", b, i, r)
+		// fmt.println("Value returned is: ", b, i, r)
 		return b, i, r
 	}
 }
@@ -260,7 +255,6 @@ func matchOneOrNone(runes []rune, pattern string, index int) (bool, int, error) 
 
 	// case when no occourance is detected
 	if !matches(runes[index]) {
-		// fmt.Println("First index no match", matches(runes[index]), string(runes[index]))
 		return true, index, nil
 	} else {
 		return true, index + 1, nil
@@ -293,7 +287,7 @@ func matchOneOrMoreBacktracking(runes []rune, pattern string, index int, pat *li
 
 	// case when no occourance is detected
 	if !matches(runes[index]) {
-		fmt.Println("First index no match", matches(runes[index]), string(runes[index]))
+		// fmt.println("First index no match", matches(runes[index]), string(runes[index]))
 		return false, -1, nil
 	}
 
@@ -303,7 +297,7 @@ func matchOneOrMoreBacktracking(runes []rune, pattern string, index int, pat *li
 
 	for i < len(runes) && matches(runes[i]) { // this only checks for overlapping queries
 		if matchPatternsFromPosition(runes, pat, i) {
-			fmt.Println("total match found under overlapping + query")
+			// fmt.println("total match found under overlapping + query")
 			return true, i, nil
 		}
 		i++
@@ -364,22 +358,21 @@ func matchSingleCharacter(runes []rune, predicate func(rune) bool, index int) (b
 func matchCompleteSubString(runes []rune, pattern string, index int) (bool, int, error) {
 	patRunes := []rune(pattern)
 
-	// fmt.Println("Checking123:", pattern, index)
-	fmt.Println(index+len(patRunes), len(runes), string(runes), patRunes[len(patRunes)-1] == '$', index+len(patRunes)-1 == len(runes))
+	// fmt.println(index+len(patRunes), len(runes), string(runes), patRunes[len(patRunes)-1] == '$', index+len(patRunes)-1 == len(runes))
 	if index+len(patRunes) > len(runes) && !(patRunes[len(patRunes)-1] == '$' && index+len(patRunes)-1 == len(runes)) { // sprcifically checking if the last char is not $
-		fmt.Println("Caught")
+		// fmt.println("Caught")
 		return false, -1, nil
 	}
 
 	if patRunes[len(patRunes)-1] == '$' {
 		if index+len(patRunes)-1 != len(runes) {
-			fmt.Println("Length mismatch")
+			// fmt.println("Length mismatch")
 			return false, -1, nil
 		}
 		for j := 0; j < len(patRunes)-1; j++ {
-			fmt.Println("Checking1: ", string(runes[index+j]), string(patRunes[j]))
+			// fmt.println("Checking1: ", string(runes[index+j]), string(patRunes[j]))
 			if runes[index+j] != patRunes[j] {
-				fmt.Println("Caught @:", string(patRunes[j]))
+				// fmt.println("Caught @:", string(patRunes[j]))
 				return false, -1, nil
 			}
 		}
@@ -387,7 +380,7 @@ func matchCompleteSubString(runes []rune, pattern string, index int) (bool, int,
 	}
 
 	for j := 0; j < len(patRunes); j++ {
-		fmt.Println("Checking: ", string(runes[index+j]), string(patRunes[j]))
+		// fmt.println("Checking: ", string(runes[index+j]), string(patRunes[j]))
 		if runes[index+j] != patRunes[j] {
 			return false, -1, nil
 		}
