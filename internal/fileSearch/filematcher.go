@@ -22,7 +22,7 @@ func FileSearch(file_paths []string, pattern string) (bool, error) {
 		if found {
 			for lin := matches.Front(); lin != nil; lin = lin.Next() {
 				string_value := lin.Value.(string)
-				fmt.Printf(file_path + ":" + string_value)
+				fmt.Println(file_path + ":" + string_value)
 			}
 			found_one = true
 		}
