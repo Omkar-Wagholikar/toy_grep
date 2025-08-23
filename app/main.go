@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"container/list"
 	"fmt"
 	"grep-go/internal/fileSearch"
 	"grep-go/internal/matchers"
@@ -16,7 +17,7 @@ var _ = bytes.ContainsAny
 
 func main() {
 
-	if len(os.Args) < 3 || os.Args[1] != "-E" {
+	if len(os.Args) < 2 || os.Args[1] != "-E" {
 		fmt.Fprintf(os.Stderr, "usage: mygrep -E <pattern>\n")
 		os.Exit(2) // 1 means no lines were selected, >1 means error
 	}
@@ -27,14 +28,28 @@ func main() {
 	var err error
 
 	if len(os.Args) == 4 {
-		// fmt.Println("File io", os.Args[2], os.Args[3])
+
+		var matches *list.List
+
 		var file *os.File
 		file, err = os.Open(os.Args[3])
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "File io error: %v\n", err)
 		}
-		ok, err = fileSearch.FileSearch(file, os.Args[2])
+		ok, matches, err = fileSearch.SingleFileSearch(file, os.Args[2])
+		if !ok {
+			os.Exit(1)
+		}
+		for lin := matches.Front(); lin != nil; lin = lin.Next() {
+			string_value := lin.Value.(string)
+			fmt.Println(string_value)
+		}
+
 		defer file.Close()
+
+	} else if len(os.Args) > 4 {
+
+		ok, err = fileSearch.FileSearch(os.Args[3:], os.Args[2])
 
 	} else {
 		var line []byte

@@ -8,7 +8,35 @@ import (
 	"os"
 )
 
-func FileSearch(file *os.File, pattern string) (bool, error) {
+func FileSearch(file_paths []string, pattern string) (bool, error) {
+	found_one := false
+	for _, file_path := range file_paths {
+		var file *os.File
+		file, err := os.Open(file_path)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "File io error: %v\n", err)
+			return false, nil
+		}
+		found, matches, single_file_err := SingleFileSearch(file, pattern)
+		defer file.Close()
+		if found {
+			for lin := matches.Front(); lin != nil; lin = lin.Next() {
+				string_value := lin.Value.(string)
+				fmt.Printf(file_path + ":" + string_value)
+			}
+			found_one = true
+		}
+
+		if single_file_err != nil {
+			fmt.Fprintf(os.Stderr, "Single file search error for: %v\n", single_file_err)
+			return false, nil
+		}
+
+	}
+	return found_one, nil
+}
+
+func SingleFileSearch(file *os.File, pattern string) (bool, *list.List, error) {
 	scanner := bufio.NewScanner(file)
 	list := list.New()
 
@@ -19,7 +47,7 @@ func FileSearch(file *os.File, pattern string) (bool, error) {
 
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "error: Error in file search: %v\n", err)
-			return false, err
+			return false, nil, err
 		}
 
 		if found {
@@ -28,14 +56,11 @@ func FileSearch(file *os.File, pattern string) (bool, error) {
 	}
 
 	if list.Len() > 0 {
-		for lin := list.Front(); lin != nil; lin = lin.Next() {
-			fmt.Println(lin.Value.(string))
-		}
-		return true, nil
+		return true, list, nil
 	}
 
 	if err := scanner.Err(); err != nil {
 		fmt.Fprintf(os.Stderr, "error: Error in file read: %v\n", err)
 	}
-	return false, nil
+	return false, nil, nil
 }
