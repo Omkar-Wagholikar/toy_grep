@@ -2,6 +2,7 @@ package fileSearch
 
 import (
 	"bufio"
+	"container/list"
 	"fmt"
 	"grep-go/internal/matchers"
 	"os"
@@ -9,6 +10,8 @@ import (
 
 func FileSearch(file *os.File, pattern string) (bool, error) {
 	scanner := bufio.NewScanner(file)
+	list := list.New()
+
 	for scanner.Scan() {
 		line_read := scanner.Text()
 		byte_string := []byte(line_read)
@@ -20,9 +23,15 @@ func FileSearch(file *os.File, pattern string) (bool, error) {
 		}
 
 		if found {
-			fmt.Println(line_read)
-			return true, err
+			list.PushBack(line_read)
 		}
+	}
+
+	if list.Len() > 0 {
+		for lin := list.Front(); lin != nil; lin = lin.Next() {
+			fmt.Println(lin.Value.(string))
+		}
+		return true, nil
 	}
 
 	if err := scanner.Err(); err != nil {
