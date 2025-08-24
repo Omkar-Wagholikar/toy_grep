@@ -8,7 +8,9 @@ import (
 func matchGroup(runes []rune, pattern string, index int) (bool, int, error) {
 	// Remove "GRP:" prefix and parse the group content
 	groupContent := pattern[4:]
-	groupPatterns, err := parsers.ParsePatterns(groupContent)
+	parser := parsers.NewParser()
+	groupPatterns, err := parser.ParsePatterns(groupContent)
+
 	if err != nil {
 		return false, -1, err
 	}
@@ -44,7 +46,9 @@ func matchGroupPlus(runes []rune, pattern string, index int, pat *list.Element) 
 
 	// Keep trying to match the group and collect all valid positions
 	for {
-		groupPatterns, err := parsers.ParsePatterns(groupContent)
+		parser := parsers.NewParser()
+		groupPatterns, err := parser.ParsePatterns(groupContent)
+
 		if err != nil {
 			return false, -1, err
 		}
@@ -105,7 +109,9 @@ func matchGroupOptional(runes []rune, pattern string, index int) (bool, int, err
 	// fmt.Printf("GRP? matching at index %d with content: '%s'\n", index, groupContent)
 
 	// Parse the group content into patterns
-	groupPatterns, err := parsers.ParsePatterns(groupContent)
+	parser := parsers.NewParser()
+	groupPatterns, err := parser.ParsePatterns(groupContent)
+
 	if err != nil {
 		// fmt.Printf("GRP? parsing failed: %v, treating as no match (optional)\n", err)
 		return true, index, nil

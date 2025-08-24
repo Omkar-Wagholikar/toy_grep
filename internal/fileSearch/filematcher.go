@@ -46,6 +46,7 @@ func SingleFileSearch(file *os.File, pattern string) (bool, *list.List, error) {
 	for scanner.Scan() {
 		line_read := scanner.Text()
 		byte_string := []byte(line_read)
+
 		found, err := matcher.MatchPattern(byte_string, pattern)
 
 		// fmt.Println(line_read, found)

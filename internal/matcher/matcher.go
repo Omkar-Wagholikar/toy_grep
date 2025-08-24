@@ -7,7 +7,9 @@ import (
 func MatchPattern(line []byte, pattern string) (bool, error) {
 	runes := []rune(string(line))
 	// pattern = strings.ReplaceAll(pattern, " ", "")
-	patterns, err := parsers.ParsePatterns(pattern)
+	parser := parsers.NewParser()
+	patterns, err := parser.ParsePatterns(pattern)
+
 	if err != nil {
 		return false, err
 	}

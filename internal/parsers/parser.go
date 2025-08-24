@@ -6,14 +6,24 @@ import (
 	"strings"
 )
 
-var cache = make(map[string]*list.List)
+// Parser holds a cache of already-parsed patterns
+type Parser struct {
+	cache map[string]*list.List
+}
 
-func ParsePatterns(pattern string) (*list.List, error) {
-	var _, exists = cache[pattern]
-	if exists {
-		// fmt.println("Cache hit for", pattern)
-		return cache[pattern], nil
+// NewParser creates a new Parser instance
+func NewParser() *Parser {
+	return &Parser{
+		cache: make(map[string]*list.List),
 	}
+}
+
+// ParsePatterns parses a pattern string, using the cache if available
+func (p *Parser) ParsePatterns(pattern string) (*list.List, error) {
+	if lst, exists := p.cache[pattern]; exists {
+		return lst, nil
+	}
+
 	patterns := list.New()
 	runes := []rune(pattern)
 	i := 0
@@ -217,7 +227,7 @@ func ParsePatterns(pattern string) (*list.List, error) {
 		}
 	}
 
-	cache[pattern] = patterns
+	p.cache[pattern] = patterns
 
 	// fmt.println()
 	// fmt.println("== Patterns == ")
