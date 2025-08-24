@@ -6,7 +6,7 @@ import (
 	"fmt"
 	directorywalk "grep-go/internal/directoryWalk"
 	"grep-go/internal/fileSearch"
-	"grep-go/internal/matchers"
+	"grep-go/internal/matcher"
 	"io"
 	"os"
 )
@@ -65,7 +65,7 @@ func main() {
 				os.Exit(2)
 			}
 
-			ok, err = matchers.MatchPattern(line, pattern)
+			ok, err = matcher.MatchPattern(line, pattern)
 
 		}
 	default:

@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"container/list"
 	"fmt"
-	"grep-go/internal/matchers"
+	"grep-go/internal/matcher"
 	"os"
 )
 
@@ -46,7 +46,7 @@ func SingleFileSearch(file *os.File, pattern string) (bool, *list.List, error) {
 	for scanner.Scan() {
 		line_read := scanner.Text()
 		byte_string := []byte(line_read)
-		found, err := matchers.MatchPattern(byte_string, pattern)
+		found, err := matcher.MatchPattern(byte_string, pattern)
 
 		// fmt.Println(line_read, found)
 
