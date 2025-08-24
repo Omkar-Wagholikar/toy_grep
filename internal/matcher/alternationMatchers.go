@@ -113,16 +113,12 @@ func matchAlternationOptional(runes []rune, pattern string, index int) (bool, in
 	alternativesStr := pattern[5:]
 	alternatives := strings.Split(alternativesStr, "|")
 
-	// fmt.Printf("ALT? matching at index %d: trying alternatives %v\n", index, alternatives)
-
 	// Try each alternative
 	for _, alt := range alternatives {
 		alt = strings.TrimSpace(alt)
 		if alt == "" {
 			continue
 		}
-
-		// fmt.Printf("  Trying alternative: '%s' at position %d\n", alt, index)
 
 		altRunes := []rune(alt)
 		if index+len(altRunes) <= len(runes) {
@@ -134,14 +130,11 @@ func matchAlternationOptional(runes []rune, pattern string, index int) (bool, in
 				}
 			}
 			if match {
-				// fmt.Printf("  Alternative '%s' matched, advancing to %d\n", alt, index+len(altRunes))
 				return true, index + len(altRunes), nil
 			}
 		}
-		// fmt.Printf("  Alternative '%s' did not match\n", alt)
 	}
 
 	// Optional means it's okay if no alternative matches
-	// fmt.Printf("  No alternatives matched, but optional so returning success at same position %d\n", index)
 	return true, index, nil
 }

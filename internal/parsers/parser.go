@@ -51,9 +51,10 @@ func (p *Parser) ParsePatterns(pattern string) (*list.List, error) {
 			j := i + 1
 			parenCount := 1
 			for j < len(runes) && parenCount > 0 {
-				if runes[j] == '(' {
+				switch runes[j] {
+				case '(':
 					parenCount++
-				} else if runes[j] == ')' {
+				case ')':
 					parenCount--
 				}
 				j++
@@ -228,14 +229,6 @@ func (p *Parser) ParsePatterns(pattern string) (*list.List, error) {
 	}
 
 	p.cache[pattern] = patterns
-
-	// fmt.println()
-	// fmt.println("== Patterns == ")
-	for ele := patterns.Front(); ele != nil; ele = ele.Next() {
-		// fmt.println("-\t", ele.Value.(string))
-	}
-	// fmt.println()
-	// fmt.println("== done ==")
 
 	return patterns, nil
 }

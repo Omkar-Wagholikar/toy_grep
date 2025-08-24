@@ -4,44 +4,63 @@ import (
 	"grep-go/internal/parsers"
 )
 
+// MatchPattern tries to match a pattern string against a given line of text.
+// It supports:
+//   - '^' anchor (pattern must match at beginning of line)
+//   - Sequential matching of parsed sub-patterns
+//
+// Params:
+//   - line:   The line (as []byte) to match against
+//   - pattern The search pattern string
+//
+// Returns:
+//   - bool:  true if the pattern matches, false otherwise
+//   - error: if parsing or matching fails
 func MatchPattern(line []byte, pattern string) (bool, error) {
+	// Convert input to runes (to handle Unicode properly)
 	runes := []rune(string(line))
-	// pattern = strings.ReplaceAll(pattern, " ", "")
+
+	// Create a parser instance and parse the pattern
 	parser := parsers.NewParser()
 	patterns, err := parser.ParsePatterns(pattern)
-
 	if err != nil {
 		return false, err
 	}
 
-	var first string = patterns.Front().Value.(string)
-	var start_index int
+	// Extract the first parsed sub-pattern (e.g. "^foo" or "bar")
+	first := patterns.Front().Value.(string)
+
+	// Keep track of starting index for matching
+	var startIndex int
 	var status bool
 
+	// Case 1: Pattern starts with '^' anchor -> must match at start of line
 	if first[0] == '^' {
-		// handle string anchor for string beginning
-		status, start_index, err = matchIndividualPattern(runes, first[1:], 0, nil)
-		// fmt.println("Valuse received under mp: ", status)
+		status, startIndex, err = matchIndividualPattern(runes, first[1:], 0, nil)
 		if err != nil || !status {
-			// fmt.println("Error here:", status, err)
+			// If the first part fails, no match is possible
 			return false, err
 		}
-		if start_index == 1+len(runes) {
+
+		// If the entire string matched and no characters remain, it's a match
+		if startIndex == 1+len(runes) {
 			return true, nil
 		}
+
+		// Otherwise, remove the first pattern (already matched) and continue
 		patterns.Remove(patterns.Front())
 	} else {
-		start_index = 0
+		// No '^' anchor, so we try starting from any position
+		startIndex = 0
 	}
 
-	// Try matching the entire pattern sequence starting at each position
-	for startPos := start_index; startPos <= len(runes); startPos++ {
-		// fmt.println()
-		// fmt.println("Top level check:", string(line))
-		if matchPatternsFromPosition(runes, patterns.Front(), startPos) {
+	// Case 2: Try matching the remaining patterns starting at every position
+	for pos := startIndex; pos <= len(runes); pos++ {
+		if matchPatternsFromPosition(runes, patterns.Front(), pos) {
 			return true, nil
 		}
 	}
 
+	// No match found
 	return false, nil
 }

@@ -89,16 +89,13 @@ func matchGroupPlus(runes []rune, pattern string, index int, pat *list.Element) 
 	// Try backtracking: start from the longest match and work backwards
 	for i := len(matchPositions) - 1; i >= 0; i-- {
 		pos := matchPositions[i]
-		// fmt.Printf("Trying to match remaining patterns from position %d (backtrack attempt %d)\n", pos, len(matchPositions)-1-i)
 
 		if matchPatternsFromPosition(runes, nextPat, pos) {
-			// fmt.Printf("Successfully matched remaining patterns from position %d\n", pos)
 			return true, pos, nil
 		}
 	}
 
 	// No backtracking position worked
-	// fmt.Printf("All backtracking attempts failed for group+\n")
 	return false, -1, nil
 }
 
@@ -106,14 +103,11 @@ func matchGroupOptional(runes []rune, pattern string, index int) (bool, int, err
 	// Remove "GRP?:" prefix
 	groupContent := pattern[5:]
 
-	// fmt.Printf("GRP? matching at index %d with content: '%s'\n", index, groupContent)
-
 	// Parse the group content into patterns
 	parser := parsers.NewParser()
 	groupPatterns, err := parser.ParsePatterns(groupContent)
 
 	if err != nil {
-		// fmt.Printf("GRP? parsing failed: %v, treating as no match (optional)\n", err)
 		return true, index, nil
 	}
 
@@ -121,18 +115,14 @@ func matchGroupOptional(runes []rune, pattern string, index int) (bool, int, err
 	currentPos := index
 	for groupPat := groupPatterns.Front(); groupPat != nil; groupPat = groupPat.Next() {
 		patStr := groupPat.Value.(string)
-		// fmt.Printf("  GRP? trying to match pattern: '%s' at position %d\n", patStr, currentPos)
 
 		found, nextPos, err := matchIndividualPattern(runes, patStr, currentPos, groupPat)
 		if err != nil || !found {
 			// Optional group doesn't match, that's okay
-			// fmt.Printf("  GRP? pattern '%s' failed, optional so returning success at original position %d\n", patStr, index)
 			return true, index, nil
 		}
-		// fmt.Printf("  GRP? pattern '%s' matched, advancing from %d to %d\n", patStr, currentPos, nextPos)
 		currentPos = nextPos
 	}
 
-	// fmt.Printf("  GRP? all patterns matched, final position: %d\n", currentPos)
 	return true, currentPos, nil
 }
