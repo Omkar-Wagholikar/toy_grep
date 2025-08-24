@@ -20,6 +20,9 @@ func FileSearch(file_paths []string, pattern string) (bool, error) {
 		found, matches, single_file_err := SingleFileSearch(file, pattern)
 		defer file.Close()
 		if found {
+
+			// fmt.Println("Matched with: ", matches.Len())
+
 			for lin := matches.Front(); lin != nil; lin = lin.Next() {
 				string_value := lin.Value.(string)
 				fmt.Println(file_path + ":" + string_value)
@@ -44,6 +47,8 @@ func SingleFileSearch(file *os.File, pattern string) (bool, *list.List, error) {
 		line_read := scanner.Text()
 		byte_string := []byte(line_read)
 		found, err := matchers.MatchPattern(byte_string, pattern)
+
+		// fmt.Println(line_read, found)
 
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "error: Error in file search: %v\n", err)
