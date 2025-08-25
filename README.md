@@ -4,21 +4,21 @@ This project is a **toy implementation of grep -E** written in Go. It provides a
 
 ## Features
 
-* **Regex Anchors**: Supports ^ (start of line) and $ (end of line).
-* **Wildcards**: . matches any single character, + matches one or more.
+* **Regex Anchors**: Supports `^` (start of line) and `$` (end of line).
+* **Wildcards**: `.` matches any single character, + matches one or more.
 * **Quantifiers**:
-   * \+ → one or more
-   * ? → zero or one
-* **Character Classes**: e.g., [abc], [^0-9], [b-w]
+   * `\+` → one or more
+   * `?` → zero or one
+* **Character Classes**: e.g., `[abc]`, `[^0-9]`, `[b-w]`
 * **Escapes**:
-   * \d → digit
-   * \w → alphanumeric/underscore
-   * \\d or \\w → literal \d or \w.
+   * `\d` → digit
+   * `\w` → alphanumeric/underscore
+   * `\\d` or `\\w` → literal `\d` or `\w`.
 * **Grouping and Alternation**:
-* (abc) → group
-* (a|b|c) → alternation
-* (ab)+, (a|b)? → quantified groups and alternations.
-* (a|b|c)*  → Combined Groups
+  * `(abc)` → group
+  * `(a|b|c)` → alternation
+  * `(ab)+`, `(a|b)?` → quantified groups and alternations.
+  * `(a|b|c)*`  → Combined Groups
 
 ## Usage
 
